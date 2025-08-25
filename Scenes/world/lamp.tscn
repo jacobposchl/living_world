@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://bg166kx6y110q"]
+
+[ext_resource type="Texture2D" uid="uid://cc3slh448miyh" path="res://Assets/world/Copilot_20250812_195246.png" id="1_g5gws"]
+
+[node name="StaticBody2D" type="StaticBody2D"]
+position = Vector2(0, 5)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.124024, 0.135254)
+texture = ExtResource("1_g5gws")

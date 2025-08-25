@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3 uid="uid://bwgtt6yjsa0e1"]
+
+[ext_resource type="Script" uid="uid://gsom5g4sx7ts" path="res://Scripts/character/NPC_Merchant.gd" id="1_bn3ig"]
+[ext_resource type="Texture2D" uid="uid://chcgirmn0au5a" path="res://Assets/art/merchant.png" id="2_qx5fn"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qx5fn"]
+radius = 25.0
+height = 90.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bn3ig"]
+radius = 94.0
+
+[node name="NPC_Merchant" type="CharacterBody2D" groups=["npc"]]
+script = ExtResource("1_bn3ig")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(4.81885, 2.1455)
+scale = Vector2(0.0760595, 0.0760595)
+texture = ExtResource("2_qx5fn")
+offset = Vector2(-62.6, -82.13)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_qx5fn")
+
+[node name="InteractArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractArea"]
+position = Vector2(0, 1)
+shape = SubResource("CircleShape2D_bn3ig")
+
+[node name="Agent" type="NavigationAgent2D" parent="."]

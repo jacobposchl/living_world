@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://bfoivpupg4kv1"]
+
+[ext_resource type="Texture2D" uid="uid://cs1244rvwluqi" path="res://Assets/world/Copilot_20250812_163309.png" id="1_x3mpj"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bbu0v"]
+size = Vector2(223.5, 111.5)
+
+[node name="StaticBody2D" type="StaticBody2D"]
+position = Vector2(0, 5)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(214, 127)
+scale = Vector2(0.244141, 0.249023)
+texture = ExtResource("1_x3mpj")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(214, 136.75)
+shape = SubResource("RectangleShape2D_bbu0v")

@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://ctld3yrbbvmdw"]
+
+[ext_resource type="Script" uid="uid://dhb7yvh5ocjj3" path="res://Scenes/world/interactable.gd" id="1_te31l"]
+[ext_resource type="Texture2D" uid="uid://nur1ttya73fc" path="res://Assets/world/Copilot_20250812_170626.png" id="2_ynkpp"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ynkpp"]
+radius = 57.0
+
+[node name="Lab" type="Area2D" groups=["interactable"]]
+script = ExtResource("1_te31l")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(35, 37.5)
+scale = Vector2(0.0546875, 0.0634766)
+texture = ExtResource("2_ynkpp")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(36, 36)
+shape = SubResource("CircleShape2D_ynkpp")

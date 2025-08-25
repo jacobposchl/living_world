@@ -1,0 +1,133 @@
+[gd_scene load_steps=16 format=3 uid="uid://dnc2xl07th4xt"]
+
+[ext_resource type="PackedScene" uid="uid://bvxj7rbwlghca" path="res://Scenes/world/wall.tscn" id="1_12diy"]
+[ext_resource type="PackedScene" uid="uid://dkrjsw008t57p" path="res://Scenes/character/player.tscn" id="1_evtuc"]
+[ext_resource type="Texture2D" uid="uid://ybsevtxmsjrp" path="res://Assets/world/Copilot_20250812_164034.png" id="1_myojr"]
+[ext_resource type="PackedScene" uid="uid://ciceerjrqga27" path="res://Scenes/world/policeStation.tscn" id="2_x8qfb"]
+[ext_resource type="PackedScene" uid="uid://bx02glxx2wewi" path="res://Scenes/world/box.tscn" id="3_g0k8s"]
+[ext_resource type="PackedScene" uid="uid://bfoivpupg4kv1" path="res://Scenes/world/house.tscn" id="4_fbtbp"]
+[ext_resource type="PackedScene" uid="uid://djpqlquotqpod" path="res://Scenes/character/NPC_Guard.tscn" id="5_qgrml"]
+[ext_resource type="PackedScene" uid="uid://bg166kx6y110q" path="res://Scenes/world/lamp.tscn" id="7_o0828"]
+[ext_resource type="PackedScene" uid="uid://ctld3yrbbvmdw" path="res://Scenes/world/terminal.tscn" id="8_o0828"]
+[ext_resource type="PackedScene" uid="uid://bwgtt6yjsa0e1" path="res://Scenes/character/NPC_Merchant.tscn" id="10_5jrsn"]
+[ext_resource type="Texture2D" uid="uid://pve30m7tvtj0" path="res://Assets/art/Copilot_20250821_201635.png" id="11_pbr1s"]
+[ext_resource type="PackedScene" uid="uid://c1a1nkjvfcvop" path="res://Scenes/character/NPC_Bandit.tscn" id="bandit_scene"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_evtuc"]
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_5jrsn"]
+vertices = PackedVector2Array(148.172, -264.531, 267.75, -270.469, 261.773, -3.03906, 242.891, 545.969, 1444.01, 543.023, 1322.85, 1.03906, 1444.98, -135.781, 1324.85, -133.203)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3), PackedInt32Array(4, 3, 2, 5), PackedInt32Array(6, 4, 5, 7)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(1455, -146, 1454, 553.001, 234, 556.001, 229, 38, 229, -16.0001, 272, -13.0001, 1313, -9.00011, 1315, -143)])
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tspqu"]
+size = Vector2(15.3846, 10.1842)
+
+[node name="World" type="Node2D"]
+position = Vector2(78, 76)
+
+[node name="StaticBody2D7" parent="." instance=ExtResource("1_12diy")]
+visible = false
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="."]
+position = Vector2(448, 232)
+scale = Vector2(1276, 721)
+mesh = SubResource("QuadMesh_evtuc")
+texture = ExtResource("1_myojr")
+metadata/_edit_lock_ = true
+
+[node name="PatrolA" type="Marker2D" parent="MeshInstance2D"]
+position = Vector2(-0.396863, 0.286111)
+scale = Vector2(1e-05, 1e-05)
+
+[node name="PatrolB" type="Marker2D" parent="MeshInstance2D"]
+position = Vector2(-0.204545, 0.370319)
+scale = Vector2(1e-05, 1e-05)
+
+[node name="PatrolC" type="Marker2D" parent="MeshInstance2D"]
+position = Vector2(0.0650471, 0.321775)
+scale = Vector2(1e-05, 1e-05)
+
+[node name="PatrolD" type="Marker2D" parent="MeshInstance2D"]
+position = Vector2(-0.12069, 0.271845)
+scale = Vector2(0.000783699, 0.00138696)
+
+[node name="StaticBody2D6" parent="MeshInstance2D" instance=ExtResource("2_x8qfb")]
+position = Vector2(0.134013, -0.578363)
+scale = Vector2(0.000783699, 0.00138696)
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="MeshInstance2D"]
+position = Vector2(-0.645768, -0.291262)
+scale = Vector2(0.000783699, 0.00138696)
+navigation_polygon = SubResource("NavigationPolygon_5jrsn")
+
+[node name="StaticBody2D" parent="." instance=ExtResource("3_g0k8s")]
+position = Vector2(371, -189)
+
+[node name="StaticBody2D3" parent="." instance=ExtResource("4_fbtbp")]
+position = Vector2(91, -190)
+
+[node name="StaticBody2D5" parent="." instance=ExtResource("7_o0828")]
+position = Vector2(704, -8)
+
+[node name="StaticBody2D4" parent="." instance=ExtResource("7_o0828")]
+position = Vector2(438, -8)
+
+[node name="StaticBody2D2" parent="." instance=ExtResource("4_fbtbp")]
+position = Vector2(-193, -190)
+
+[node name="Player" parent="." instance=ExtResource("1_evtuc")]
+position = Vector2(450, 228)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="StaticBody2D6" parent="." instance=ExtResource("8_o0828")]
+position = Vector2(618, -63)
+
+[node name="NPC" parent="." instance=ExtResource("5_qgrml")]
+position = Vector2(92, 266)
+disable_mode = 2
+patrol_targets = Array[NodePath]([NodePath("../MeshInstance2D/PatrolA"), NodePath("../MeshInstance2D/PatrolB"), NodePath("../MeshInstance2D/PatrolD")])
+
+[node name="StaticBody2D8" parent="." instance=ExtResource("1_12diy")]
+position = Vector2(-192, -135)
+
+[node name="StaticBody2D9" parent="." instance=ExtResource("1_12diy")]
+position = Vector2(-192, 55)
+
+[node name="StaticBody2D10" parent="." instance=ExtResource("1_12diy")]
+position = Vector2(-191, 243)
+
+[node name="StaticBody2D11" parent="." instance=ExtResource("1_12diy")]
+position = Vector2(-191, 402)
+
+[node name="NPC_Merchant" parent="." instance=ExtResource("10_5jrsn")]
+position = Vector2(733, 288)
+
+[node name="WildernessPatrolA" type="Marker2D" parent="."]
+position = Vector2(800, 200)
+
+[node name="WildernessPatrolB" type="Marker2D" parent="."]
+position = Vector2(1000, 300)
+
+[node name="WildernessPatrolC" type="Marker2D" parent="."]
+position = Vector2(900, 500)
+
+[node name="WildernessPatrolD" type="Marker2D" parent="."]
+position = Vector2(700, 400)
+
+[node name="NPC_Bandit" parent="." instance=ExtResource("bandit_scene")]
+position = Vector2(550, 476)
+patrol_targets = Array[NodePath]([NodePath("WildernessPatrolA"), NodePath("WildernessPatrolB"), NodePath("WildernessPatrolC"), NodePath("WildernessPatrolD")])
+
+[node name="StaticBody2D12" type="StaticBody2D" parent="."]
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D12"]
+position = Vector2(847, 286)
+scale = Vector2(0.136475, 0.136475)
+texture = ExtResource("11_pbr1s")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D12"]
+position = Vector2(846, 290)
+scale = Vector2(9.23, 9.23)
+shape = SubResource("RectangleShape2D_tspqu")

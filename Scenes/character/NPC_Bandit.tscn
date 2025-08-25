@@ -1,0 +1,66 @@
+[gd_scene load_steps=6 format=3 uid="uid://c1a1nkjvfcvop"]
+
+[ext_resource type="Script" uid="uid://cqqde3wvsqwrb" path="res://Scripts/character/NPC_Bandit.gd" id="1_bandit"]
+[ext_resource type="Texture2D" uid="uid://bey5i8qbibss2" path="res://Assets/art/Copilot_20250824_163407.png" id="2_b6i3n"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_bandit"]
+radius = 16.0
+height = 102.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sight"]
+size = Vector2(400, 400)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
+size = Vector2(136, 132)
+
+[node name="NPC_Bandit" type="CharacterBody2D" groups=["enemy", "npc"]]
+script = ExtResource("1_bandit")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-2.99982, 0.999707)
+scale = Vector2(0.083984, 0.085586)
+texture = ExtResource("2_b6i3n")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_bandit")
+
+[node name="Agent" type="NavigationAgent2D" parent="."]
+target_desired_distance = 16.0
+path_max_distance = 10.0
+
+[node name="SightArea" type="Area2D" parent="."]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SightArea"]
+shape = SubResource("RectangleShape2D_sight")
+
+[node name="AttackArea" type="Area2D" parent="."]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea"]
+shape = SubResource("RectangleShape2D_attack")
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 20.0
+offset_bottom = -30.0
+value = 100.0
+show_percentage = false
+
+[node name="CombatResultLabel" type="Label" parent="."]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -60.0
+offset_top = -80.0
+offset_right = 60.0
+offset_bottom = -50.0
+text = "Combat Result"
+horizontal_alignment = 1
+vertical_alignment = 1

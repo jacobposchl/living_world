@@ -1,0 +1,57 @@
+[gd_scene load_steps=2 format=3 uid="uid://ltg2bb0irovf"]
+
+[ext_resource type="Script" uid="uid://bros386wmoy5i" path="res://Scripts/systems/dialogue_ui.gd" id="1_m10gc"]
+
+[node name="DialogueUI" type="CanvasLayer"]
+script = ExtResource("1_m10gc")
+
+[node name="Box" type="Panel" parent="."]
+anchors_preset = -1
+anchor_left = 0.005
+anchor_top = 0.34
+anchor_right = 0.613
+anchor_bottom = 0.643
+offset_left = 0.599999
+offset_top = 0.199997
+offset_right = 0.359985
+offset_bottom = 0.0400085
+
+[node name="Speaker" type="Label" parent="Box"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.164
+anchor_bottom = 0.131
+offset_left = 32.0
+offset_top = 16.0
+offset_right = 648.408
+offset_bottom = 140.442
+text = "Me"
+
+[node name="Text" type="RichTextLabel" parent="Box"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 31.0
+offset_top = 49.0
+offset_right = -15.0
+offset_bottom = -19.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "This is the Text of the File to know hwere and how it will look."
+
+[node name="Choices" type="HBoxContainer" parent="Box"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 96.0
+offset_right = 384.0
+offset_bottom = 156.0
+
+[node name="Button2" type="Button" parent="Box/Choices"]
+layout_mode = 2
+text = "ffgdgd"
+
+[node name="Button" type="Button" parent="Box/Choices"]
+layout_mode = 2
+text = "hgjgjygj"

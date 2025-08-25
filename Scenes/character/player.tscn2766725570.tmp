@@ -1,0 +1,35 @@
+[gd_scene load_steps=6 format=3 uid="uid://dkrjsw008t57p"]
+
+[ext_resource type="Script" uid="uid://57yceqos1qm7" path="res://Scripts/character/player.gd" id="1_yh67s"]
+[ext_resource type="Texture2D" uid="uid://c3xeejn6ua1my" path="res://Assets/art/main.png" id="2_s1381"]
+[ext_resource type="Script" uid="uid://c8gceujedu81n" path="res://Scenes/character/interact.gd" id="3_815vn"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hvnpd"]
+radius = 19.0
+height = 76.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_v4ydf"]
+radius = 53.0848
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_yh67s")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -1.90735e-06)
+scale = Vector2(0.150195, 0.15306)
+texture = ExtResource("2_s1381")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+texture_filter = 1
+shape = SubResource("CapsuleShape2D_hvnpd")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="InteractArea" type="Area2D" parent="."]
+script = ExtResource("3_815vn")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractArea"]
+shape = SubResource("CircleShape2D_v4ydf")
+
+[connection signal="body_entered" from="InteractArea" to="InteractArea" method="_on_body_entered"]
+[connection signal="body_exited" from="InteractArea" to="InteractArea" method="_on_body_exited"]

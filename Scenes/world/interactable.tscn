@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://kw4miq5eebx8"]
+
+[ext_resource type="Script" uid="uid://dhb7yvh5ocjj3" path="res://Scenes/world/interactable.gd" id="1_u1s70"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_ynkpp"]
+radius = 21.0
+height = 58.0
+
+[node name="Area2D" type="Area2D" groups=["interactable"]]
+script = ExtResource("1_u1s70")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_ynkpp")
