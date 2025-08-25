@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://cnh6yjh7yeiit"]
+[gd_scene load_steps=2 format=3 uid="uid://cw61soah08yx5"]
 
 [ext_resource type="Script" uid="uid://dir1y7elclppo" path="res://Scripts/ui/chat_ui.gd" id="1_sq36d"]
 
@@ -8,18 +8,26 @@ script = ExtResource("1_sq36d")
 [node name="Box" type="Panel" parent="."]
 anchors_preset = -1
 anchor_right = 0.359
-anchor_bottom = 0.343
+anchor_bottom = 0.4
 offset_right = -0.52002
 offset_bottom = 0.039978
 
-[node name="Header" type="Label" parent="Box"]
+[node name="Header" type="HBoxContainer" parent="Box"]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 0.662
 anchor_bottom = 0.13
 offset_right = 0.141968
 offset_bottom = -0.110001
+
+[node name="HeaderLabel" type="Label" parent="Box/Header"]
+layout_mode = 2
 text = "Chat UI"
+
+[node name="ReputationScore" type="Label" parent="Box/Header"]
+layout_mode = 2
+text = "Rep: 0"
+horizontal_alignment = 2
 
 [node name="Transcript" type="RichTextLabel" parent="Box"]
 layout_mode = 1
@@ -27,20 +35,43 @@ anchors_preset = -1
 anchor_left = 0.078
 anchor_top = 0.17
 anchor_right = 0.913
-anchor_bottom = 0.834
+anchor_bottom = 0.75
 offset_left = 0.197998
 offset_top = 0.00999832
 offset_right = -0.0670166
 offset_bottom = 0.00198364
 text = "This is the chat"
 
+[node name="TypingIndicator" type="HBoxContainer" parent="Box"]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.078
+anchor_top = 0.75
+anchor_right = 0.913
+anchor_bottom = 0.8
+offset_left = 0.197998
+offset_top = 0.00198364
+offset_right = -0.0670166
+offset_bottom = -0.0340118
+
+[node name="TypingLabel" type="Label" parent="Box/TypingIndicator"]
+modulate = Color(0.7, 0.7, 0.7, 1)
+layout_mode = 2
+text = "NPC is typing"
+
+[node name="TypingDots" type="Label" parent="Box/TypingIndicator"]
+modulate = Color(0.7, 0.7, 0.7, 1)
+layout_mode = 2
+text = "..."
+
 [node name="InputRow" type="VBoxContainer" parent="Box"]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.048
-anchor_top = 0.684
+anchor_top = 0.85
 anchor_right = 0.956
-anchor_bottom = 0.96
+anchor_bottom = 0.95
 offset_left = -0.0319996
 offset_top = -8.948
 offset_right = 0.195984
@@ -48,11 +79,14 @@ offset_bottom = 29.88
 alignment = 1
 
 [node name="Entry" type="LineEdit" parent="Box/InputRow"]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
-placeholder_text = "Enter Text..."
+placeholder_text = "Type your message..."
 
 [node name="Send" type="Button" parent="Box/InputRow"]
+custom_minimum_size = Vector2(60, 30)
 layout_mode = 2
+text = "Send"
 
 [node name="CloseBtn" type="Button" parent="Box"]
 layout_mode = 0
@@ -60,4 +94,5 @@ offset_left = 420.0
 offset_top = 4.0
 offset_right = 451.0
 offset_bottom = 35.0
-text = "X"
+tooltip_text = "Back to Dialogue (Esc)"
+text = "←"

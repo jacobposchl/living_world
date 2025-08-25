@@ -12,7 +12,7 @@ func _on_body_exited(body):
 
 @onready var interact_area: Area2D = $InteractArea as Area2D
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if Dialogue.is_active():
 		return
 	if Input.is_action_just_pressed("interact"):

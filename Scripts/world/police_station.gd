@@ -1033,11 +1033,11 @@ func _create_guard_npc() -> Node2D:
 	guard.add_child(collision)
 	
 	# Add sprite
-	var sprite = Sprite2D.new()
+	var guard_sprite = Sprite2D.new()
 	# You can set a guard texture here if available
-	# sprite.texture = preload("res://Assets/art/guard.png")
-	sprite.modulate = Color.BLUE  # Blue color to distinguish from bandits
-	guard.add_child(sprite)
+	# guard_sprite.texture = preload("res://Assets/art/guard.png")
+	guard_sprite.modulate = Color.BLUE  # Blue color to distinguish from bandits
+	guard.add_child(guard_sprite)
 	
 	# Add navigation agent for pathfinding
 	var nav_agent = NavigationAgent2D.new()

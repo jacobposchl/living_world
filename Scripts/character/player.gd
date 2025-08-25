@@ -18,7 +18,7 @@ func _physics_process(_delta: float) -> void:
 	velocity = (speed * move_dir.normalized()) if move_dir != Vector2.ZERO else Vector2.ZERO
 	move_and_slide()
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	# Block interactions if Dialogue OR Chat is active
 	if (typeof(Dialogue) != TYPE_NIL and Dialogue.is_active()) \
 	or (typeof(Chat) != TYPE_NIL and Chat.is_open()):

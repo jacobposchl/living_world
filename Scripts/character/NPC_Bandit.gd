@@ -28,6 +28,60 @@ var is_defeated: bool = false
 var combat_wins: int = 0
 var combat_losses: int = 0
 
+# NEW: Individual NPC identification for reputation system
+@export var npc_id: String = "Bandit_01"
+
+# -----------------------------
+# NEW: INDIVIDUAL REPUTATION METHODS
+# -----------------------------
+func _initialize_reputation() -> void:
+	"""
+	Initialize this bandit's reputation if it doesn't exist yet.
+	Bandits start with slightly negative reputation (suspicious of strangers).
+	"""
+	if State.get_npc_reputation(npc_id) == 0:  # Only initialize if not set
+		State.set_npc_reputation(npc_id, -10)  # Start slightly suspicious
+		print("[Bandit] Initialized reputation for ", npc_id, " to -10")
+
+func get_player_reputation() -> int:
+	"""
+	Get this bandit's individual opinion of the player.
+	Positive = friendly, Negative = hostile, 0 = neutral
+	"""
+	return State.get_npc_reputation(npc_id, 0)
+
+func update_player_reputation(amount: int) -> void:
+	"""
+	Update this bandit's opinion of the player.
+	Positive amount increases reputation, negative decreases it.
+	"""
+	State.change_npc_reputation(npc_id, amount)
+	print("[Bandit] ", npc_id, " reputation changed by ", amount, " (now: ", get_player_reputation(), ")")
+
+func is_player_friend() -> bool:
+	"""
+	Check if this bandit considers the player a friend.
+	Based on individual reputation, not global reputation.
+	"""
+	var reputation = get_player_reputation()
+	return reputation > 20  # Positive reputation = friend
+
+func is_player_enemy() -> bool:
+	"""
+	Check if this bandit considers the player an enemy.
+	Based on individual reputation, not global reputation.
+	"""
+	var reputation = get_player_reputation()
+	return reputation < -20  # Negative reputation = enemy
+
+func is_player_neutral() -> bool:
+	"""
+	Check if this bandit is neutral towards the player.
+	Based on individual reputation, not global reputation.
+	"""
+	var reputation = get_player_reputation()
+	return reputation >= -20 and reputation <= 20  # Neutral range
+
 # -----------------------------
 # READY / PROCESS
 # -----------------------------
@@ -36,6 +90,9 @@ func _ready() -> void:
 		push_error("[Bandit] NavigationAgent2D child named 'Agent' not found.")
 		set_process(false); set_physics_process(false)
 		return
+	
+	# NEW: Initialize this bandit's reputation if it doesn't exist yet
+	_initialize_reputation()
 	
 	patrol_points.clear()
 	for path in patrol_targets:
@@ -63,6 +120,9 @@ func _physics_process(_delta: float) -> void:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
+		
+	# NEW: Decay reputation over time (gradually return to neutral)
+	State.decay_reputation(npc_id, _delta)
 		
 	match state:
 		BanditState.PATROL:   _handle_patrol()
@@ -145,13 +205,32 @@ func _generate_wilderness_patrol() -> void:
 func _on_sight_area_body_entered(body: Node) -> void:
 	if body.is_in_group("player") and not is_defeated:
 		seen_player = body
+		
+		# NEW: Use individual reputation instead of global wanted status for behavior
+		var player_reputation = get_player_reputation()
+		
 		if State.is_player_wanted():
-			if randf() < 0.3:
+			# Player is wanted by law - check individual bandit's opinion
+			if player_reputation > 30:  # High reputation with THIS bandit
 				_offer_alliance()
-			else:
+			elif player_reputation > -10:  # Neutral to slightly positive with THIS bandit
+				if randf() < 0.3:  # 30% chance to offer alliance
+					_offer_alliance()
+				else:
+					state = BanditState.CHASE
+			else:  # Low reputation with THIS bandit
 				state = BanditState.CHASE
 		else:
-			state = BanditState.CHASE
+			# Player is not wanted by law - check individual bandit's opinion
+			if player_reputation < -30:  # Very negative with THIS bandit
+				state = BanditState.CHASE
+			elif player_reputation < -10:  # Slightly negative with THIS bandit
+				if randf() < 0.7:  # 70% chance to chase
+					state = BanditState.CHASE
+				else:
+					state = BanditState.PATROL
+			else:  # Neutral or positive with THIS bandit
+				state = BanditState.PATROL
 
 func _on_sight_area_body_exited(body: Node) -> void:
 	if body == seen_player:
@@ -168,7 +247,8 @@ func _threaten_player() -> void:
 	var ctx: Dictionary = {
 		"player_wanted": State.is_player_wanted(),
 		"bandit_health": health,
-		"player_reputation": State.get_reputation()
+		# NEW: Use individual reputation instead of global
+		"player_reputation": get_player_reputation()
 	}
 	var threat_line: String = await LLM.generate_line(
 		"wilderness bandit: aggressive, threatening, demands tribute",
@@ -192,7 +272,8 @@ func _threaten_player() -> void:
 func _offer_alliance() -> void:
 	var ctx: Dictionary = {
 		"player_wanted": State.is_player_wanted(),
-		"player_reputation": State.get_reputation()
+		# NEW: Use individual reputation instead of global
+		"player_reputation": get_player_reputation()
 	}
 	var alliance_line: String = await LLM.generate_line(
 		"wilderness bandit: opportunistic, sees potential ally",
@@ -220,6 +301,11 @@ func _on_dialogue_choice_bandit(choice_id: String) -> void:
 		"decline": _become_hostile()
 		"stats":   _show_combat_stats()
 		"chat":
+			# NEW: Check if chat is already open before opening new one
+			if Chat.is_open():
+				print("[Bandit] Chat already open, ignoring chat request")
+				return
+				
 			# Close dialogue and open Chat UI
 			Dialogue.close()
 			var persona: String = "wilderness bandit: gruff, opportunistic, aggressive, but will talk if pressed"
@@ -228,16 +314,25 @@ func _on_dialogue_choice_bandit(choice_id: String) -> void:
 					"player_wanted": State.is_player_wanted(),
 					"bandit_health": health,
 					"combat_wins": combat_wins,
-					"combat_losses": combat_losses
+					"combat_losses": combat_losses,
+					# NEW: Include individual reputation for chat UI
+					"player_reputation": get_player_reputation()
 				}
 			Chat.open("Bandit", persona, ctx_provider)
+			# NEW: Connect to chat closed signal to re-open dialogue
+			if Chat.ui and Chat.ui.has_signal("chat_closed"):
+				Chat.ui.chat_closed.connect(_on_chat_closed)
 			if typeof(Chat) != TYPE_NIL and Chat.ui:
 				if not Chat.ui.chat_closed.is_connected(_on_chat_closed):
 					Chat.ui.chat_closed.connect(_on_chat_closed, Object.CONNECT_ONE_SHOT)
 
 func _on_chat_closed() -> void:
-	state = BanditState.PATROL
-	_set_next_patrol_target()
+	# NEW: Re-open dialogue options when chat closes
+	print("[Bandit] Chat closed, re-opening dialogue options")
+	# Small delay to ensure chat is fully closed
+	await get_tree().create_timer(0.1).timeout
+	# Re-open dialogue with the player
+	talk_to_player()
 
 # -----------------------------
 # (Combat + damage methods unchanged from your version)
@@ -258,7 +353,8 @@ func _handle_player_victory() -> void:
 	# Player won the fight
 	combat_losses += 1
 	State.add_event({"type": "defeated_bandit", "by": "player"})
-	State.change_reputation(10)
+	# NEW: Update THIS bandit's individual opinion of the player
+	update_player_reputation(-25)  # Bandit dislikes being defeated
 	
 	# Show combat result to player
 	_show_combat_result("Victory!", "You defeated the bandit!", Color.GREEN)
@@ -288,7 +384,8 @@ func _handle_bandit_victory() -> void:
 	# Bandit won the fight
 	combat_wins += 1
 	State.add_event({"type": "robbed_by_bandit", "by": "player"})
-	State.change_reputation(-15)
+	# NEW: Update THIS bandit's individual opinion of the player
+	update_player_reputation(15)  # Bandit likes winning against the player
 	
 	# Show combat result to player
 	_show_combat_result("Defeat!", "The bandit robbed you!", Color.RED)
@@ -316,7 +413,8 @@ func _demand_tribute() -> void:
 	
 	if has_gold:
 		State.add_event({"type": "paid_tribute", "to": "bandit", "amount": 50})
-		State.change_reputation(-10)
+		# NEW: Update THIS bandit's individual opinion of the player
+		update_player_reputation(20)  # Bandit likes getting tribute
 		
 		var thanks_line: String = await LLM.generate_line(
 			"wilderness bandit: satisfied, slightly less hostile",
@@ -339,7 +437,8 @@ func _allow_escape() -> void:
 
 func _form_alliance() -> void:
 	State.add_event({"type": "allied_with_bandit", "by": "player"})
-	State.change_reputation(-20)
+	# NEW: Update THIS bandit's individual opinion of the player
+	update_player_reputation(40)  # Bandit really likes forming alliances
 	
 	var alliance_line: String = await LLM.generate_line(
 		"wilderness bandit: pleased, now considers player an ally",
@@ -370,7 +469,8 @@ func _defeat() -> void:
 	state = BanditState.DEFEATED
 	
 	State.add_event({"type": "bandit_defeated", "by": "player"})
-	State.change_reputation(15)
+	# NEW: Update THIS bandit's individual opinion of the player
+	update_player_reputation(-30)  # Bandit really dislikes being defeated
 	
 	# Could add defeated dialogue here
 	print("[Bandit] Defeated!")
@@ -387,6 +487,11 @@ func _flee_from_player() -> void:
 
 func talk_to_player() -> void:
 	if is_defeated:
+		return
+	
+	# NEW: Check if chat is already open to prevent UI stacking
+	if Chat.is_open():
+		print("[Bandit] Chat already open, ignoring talk request")
 		return
 		
 	if state == BanditState.ATTACK:

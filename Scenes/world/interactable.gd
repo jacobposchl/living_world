@@ -3,7 +3,7 @@ extends Area2D
 
 var used: bool = false
 
-func interact(by: Node) -> void:
+func interact(_by: Node) -> void:
 	if used:
 		return
 	used = true

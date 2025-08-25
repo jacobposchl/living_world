@@ -14,6 +14,9 @@ enum MState { IDLE, MOVE, TALKING }
 @export var chase_cooldown_seconds: float = 3.0      # must wait this long between chases
 @export var approach_buffer: float = 80.0            # how far from the player to stop (no crowding)
 
+# NEW: Individual NPC identification for reputation system
+@export var npc_id: String = "Merchant_01"
+
 @onready var agent: NavigationAgent2D = $Agent as NavigationAgent2D
 @onready var talk_range: Area2D = $InteractArea as Area2D
 
@@ -25,6 +28,60 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 # --- NEW: chase cooldown bookkeeping ---
 var _next_chase_time_s: float = 0.0
 
+# -----------------------------
+# NEW: INDIVIDUAL REPUTATION METHODS
+# -----------------------------
+func _initialize_reputation() -> void:
+	"""
+	Initialize this merchant's reputation if it doesn't exist yet.
+	Merchants start with neutral reputation (business-minded, not judgmental).
+	"""
+	if State.get_npc_reputation(npc_id) == 0:  # Only initialize if not set
+		State.set_npc_reputation(npc_id, 0)  # Start neutral
+		print("[Merchant] Initialized reputation for ", npc_id, " to 0")
+
+func get_player_reputation() -> int:
+	"""
+	Get this merchant's individual opinion of the player.
+	Positive = good customer, Negative = bad customer, 0 = neutral
+	"""
+	return State.get_npc_reputation(npc_id, 0)
+
+func update_player_reputation(amount: int) -> void:
+	"""
+	Update this merchant's opinion of the player.
+	Positive amount increases reputation, negative decreases it.
+	"""
+	State.change_npc_reputation(npc_id, amount)
+	print("[Merchant] ", npc_id, " reputation changed by ", amount, " (now: ", get_player_reputation(), ")")
+
+func is_player_good_customer() -> bool:
+	"""
+	Check if this merchant considers the player a good customer.
+	Based on individual reputation, not global flags.
+	"""
+	var reputation = get_player_reputation()
+	return reputation > 15  # Positive reputation = good customer
+
+func is_player_bad_customer() -> bool:
+	"""
+	Check if this merchant considers the player a bad customer.
+	Based on individual reputation, not global flags.
+	"""
+	var reputation = get_player_reputation()
+	return reputation < -15  # Negative reputation = bad customer
+
+func is_player_neutral_customer() -> bool:
+	"""
+	Check if this merchant is neutral towards the player.
+	Based on individual reputation, not global flags.
+	"""
+	var reputation = get_player_reputation()
+	return reputation >= -15 and reputation <= 15  # Neutral range
+
+# -----------------------------
+# READY / PROCESS
+# -----------------------------
 func _ready() -> void:
 	_rng.randomize()
 
@@ -34,10 +91,22 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 
+	# NEW: Initialize this merchant's reputation if it doesn't exist yet
+	_initialize_reputation()
+
 	if stall_home == Vector2.ZERO:
 		stall_home = global_position
 
-	agent.target_desired_distance = arrive_radius
+	# NEW: Wait for navigation to be ready before setting agent properties
+	await get_tree().process_frame
+	
+	if agent and is_instance_valid(agent):
+		agent.target_desired_distance = arrive_radius
+	else:
+		push_error("[Merchant] Agent became invalid after frame processing")
+		set_process(false)
+		set_physics_process(false)
+		return
 
 	if talk_range:
 		talk_range.body_entered.connect(func(b: Node) -> void:
@@ -62,6 +131,9 @@ func _physics_process(_dt: float) -> void:
 		if _state != MState.TALKING:
 			_pause_for_dialogue()
 		return
+
+	# NEW: Decay reputation over time (gradually return to neutral)
+	State.decay_reputation(npc_id, _dt)
 
 	match _state:
 		MState.TALKING:
@@ -157,25 +229,36 @@ func _random_nav_point_around(center: Vector2, radius: float) -> Vector2:
 	return _project_to_nav(center + Vector2(cos(angle), sin(angle)) * r)
 
 func _project_to_nav(pos: Vector2) -> Vector2:
+	# NEW: Add safety check to prevent NavigationServer errors
+	if not agent or not is_instance_valid(agent):
+		return pos
+		
 	var map_rid: RID = agent.get_navigation_map()
 	if map_rid.is_valid():
-		return NavigationServer2D.map_get_closest_point(map_rid, pos)
-	else:
-		return pos
+		# Check if navigation map is ready
+		var iteration_id = NavigationServer2D.map_get_iteration_id(map_rid)
+		if iteration_id > 0:  # Map is ready
+			return NavigationServer2D.map_get_closest_point(map_rid, pos)
+	
+	# Fallback: return original position if navigation isn't ready
+	return pos
 
 # -----------------------------
 # DIALOGUE + CHAT
 # -----------------------------
 func talk_to_player() -> void:
-	# Don't stack UIs
+	# NEW: Check if chat is already open to prevent UI stacking
 	if typeof(Chat) != TYPE_NIL and Chat.is_open():
+		print("[Merchant] Chat already open, ignoring talk request")
 		return
 
 	_pause_for_dialogue()
 
 	var ctx: Dictionary = {
 		"lab_looted": State.get_flag("lab_looted"),
-		"player_wanted": State.get_flag("player_wanted")
+		"player_wanted": State.get_flag("player_wanted"),
+		# NEW: Include individual reputation for personalized dialogue
+		"player_reputation": get_player_reputation()
 	}
 
 	var line: String = await LLM.generate_line(
@@ -201,9 +284,12 @@ func talk_to_player() -> void:
 func _on_dialogue_choice_merchant(choice_id: String) -> void:
 	match choice_id:
 		"browse":
+			# NEW: Update THIS merchant's individual opinion of the player
+			update_player_reputation(10)  # Merchant likes customers who browse
 			var ctx: Dictionary = {
 				"lab_looted": State.get_flag("lab_looted"),
-				"player_wanted": State.get_flag("player_wanted")
+				"player_wanted": State.get_flag("player_wanted"),
+				"player_reputation": get_player_reputation()
 			}
 			var sold_out: String = await LLM.generate_line(
 				"village merchant: cheerful but absent-minded, just realized he sold out today",
@@ -216,20 +302,32 @@ func _on_dialogue_choice_merchant(choice_id: String) -> void:
 			_bind_dialogue_resume_hooks()
 
 		"chat":
+			# NEW: Check if chat is already open before opening new one
+			if Chat.is_open():
+				print("[Merchant] Chat already open, ignoring chat request")
+				return
+				
+			# NEW: Update THIS merchant's individual opinion of the player
+			update_player_reputation(5)  # Merchant likes customers who chat
 			Dialogue.close()
 			var persona: String = "village merchant: cheerful, chatty, a little pushy about sales"
 			var ctx_provider := func() -> Dictionary:
 				return {
 					"lab_looted": State.get_flag("lab_looted"),
-					"player_wanted": State.get_flag("player_wanted")
+					"player_wanted": State.get_flag("player_wanted"),
+					# NEW: Include individual reputation for personalized chat
+					"player_reputation": get_player_reputation()
 				}
 			Chat.open("Merchant", persona, ctx_provider)
 			_bind_chat_resume_hooks()
 
 		"leave":
+			# NEW: Update THIS merchant's individual opinion of the player
+			update_player_reputation(-15)  # Merchant dislikes customers who leave without buying
 			var ctx2: Dictionary = {
 				"lab_looted": State.get_flag("lab_looted"),
-				"player_wanted": State.get_flag("player_wanted")
+				"player_wanted": State.get_flag("player_wanted"),
+				"player_reputation": get_player_reputation()
 			}
 			var mad_line: String = await LLM.generate_line(
 				"village merchant: easily offended, grumpy when rejected",
@@ -264,4 +362,9 @@ func _on_dialogue_ended() -> void:
 	_pick_next_action()
 
 func _on_chat_closed() -> void:
-	_on_dialogue_ended()
+	# NEW: Re-open dialogue options when chat closes
+	print("[Merchant] Chat closed, re-opening dialogue options")
+	# Small delay to ensure chat is fully closed
+	await get_tree().create_timer(0.1).timeout
+	# Re-open dialogue with the player
+	talk_to_player()
