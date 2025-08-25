@@ -12,6 +12,19 @@ var reputation_decay_rate: float = 0.5  # Points per second
 var max_reputation: int = 100
 var min_reputation: int = -100
 
+# NEW: Save file path
+var save_file_path: String = "user://game_save.dat"
+
+func _ready() -> void:
+	# Load saved data when the game starts
+	load_game_data()
+
+func _notification(what: int) -> void:
+	# Save data when the game is about to quit
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		save_game_data()
+		get_tree().quit()
+
 func set_flag(flag_name: String, value) -> void:  # Changed from bool to any type
 	flags[flag_name] = value
 
@@ -106,3 +119,61 @@ func get_recent_events(limit: int = 5) -> Array[Dictionary]:
 	var start: int = max(0, events.size() - limit) as int
 	var arr: Array = events.slice(start, events.size())
 	return arr as Array[Dictionary]
+
+# NEW: Save/Load system for persistence
+func save_game_data() -> void:
+	var save_data = {
+		"flags": flags,
+		"events": events,
+		"npc_reputations": npc_reputations,
+		"npc_relationships": npc_relationships
+	}
+	
+	var file = FileAccess.open(save_file_path, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(save_data))
+		file.close()
+		print("[StateManager] Game data saved successfully")
+	else:
+		print("[StateManager] ERROR: Failed to save game data")
+
+func load_game_data() -> void:
+	if not FileAccess.file_exists(save_file_path):
+		print("[StateManager] No save file found, starting fresh")
+		return
+	
+	var file = FileAccess.open(save_file_path, FileAccess.READ)
+	if file:
+		var json_string = file.get_as_text()
+		file.close()
+		
+		var json = JSON.new()
+		var parse_result = json.parse(json_string)
+		
+		if parse_result == OK:
+			var data = json.data
+			if data is Dictionary:
+				flags = data.get("flags", {})
+				events = data.get("events", [])
+				npc_reputations = data.get("npc_reputations", {})
+				npc_relationships = data.get("npc_relationships", {})
+				print("[StateManager] Game data loaded successfully")
+				print("[StateManager] Loaded NPC reputations: ", npc_reputations)
+			else:
+				print("[StateManager] ERROR: Invalid save data format")
+		else:
+			print("[StateManager] ERROR: Failed to parse save data")
+	else:
+		print("[StateManager] ERROR: Failed to open save file")
+
+# NEW: Debug function to show current reputation values
+func debug_reputations() -> void:
+	print("[StateManager] === CURRENT REPUTATIONS ===")
+	print("[StateManager] Global reputation: ", get_reputation())
+	print("[StateManager] NPC reputations: ", npc_reputations)
+	print("[StateManager] NPC relationships: ", npc_relationships)
+	print("[StateManager] =========================")
+
+# NEW: Manual save function (can be called during gameplay)
+func save_now() -> void:
+	save_game_data()

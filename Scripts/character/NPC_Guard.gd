@@ -96,6 +96,13 @@ func _physics_process(_delta: float) -> void:
 	if agent == null:
 		return
 
+	# NEW: Block movement during dialogue or chat
+	if (typeof(Dialogue) != TYPE_NIL and Dialogue.is_active()) \
+	or (typeof(Chat) != TYPE_NIL and Chat.is_open()):
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+
 	# NEW: Decay reputation over time (gradually return to neutral)
 	State.decay_reputation(npc_id, _delta)
 
@@ -175,22 +182,9 @@ func talk_to_player() -> void:
 	var lab_looted: bool = State.get_flag("lab_looted")
 	var intent: String = "accuse_after_theft" if lab_looted else "greet_patrol"
 	var fallback: String = "Stop right there. The lab's missing supplies." if lab_looted else "Evening. Keep to the lit streets."
-	var ctx: Dictionary = {
-		"lab_looted": lab_looted,
-		"player_wanted": State.get_flag("player_wanted"),
-		# NEW: Include individual reputation for more personalized dialogue
-		"player_reputation": get_player_reputation()
-	}
-
-	var line: String = await LLM.generate_line(
-		"village guard: calm but vigilant, speaks tersely",
-		intent,
-		ctx,
-		fallback
-	)
-
-	# Start Dialogue with a new "Ask a question" choice
-	Dialogue.start("Guard", ["[b]Guard:[/b] " + line])
+	
+	# Show immediate greeting to avoid delays
+	Dialogue.start("Guard", ["[b]Guard:[/b] " + fallback])
 	Dialogue.choices(
 		[
 			{"label": "Confess" if lab_looted else "…", "id": "confess" if lab_looted else "noop"},
@@ -200,6 +194,37 @@ func talk_to_player() -> void:
 		self,
 		"_on_dialogue_choice_guard"
 	)
+	
+	# Optionally enhance the greeting with AI in the background (non-blocking)
+	_enhance_greeting_async(lab_looted, intent, fallback)
+
+func _enhance_greeting_async(lab_looted: bool, intent: String, fallback: String) -> void:
+	# This runs in the background and doesn't block the UI
+	var ctx: Dictionary = {
+		"lab_looted": lab_looted,
+		"player_wanted": State.get_flag("player_wanted"),
+		"player_reputation": get_player_reputation()
+	}
+
+	var enhanced_line: String = await LLM.generate_line(
+		"village guard: calm but vigilant, speaks tersely",
+		intent,
+		ctx,
+		fallback
+	)
+	
+	# If the dialogue is still open and we got a better response, update it
+	if Dialogue.is_active() and enhanced_line != fallback:
+		Dialogue.start("Guard", ["[b]Guard:[/b] " + enhanced_line])
+		Dialogue.choices(
+			[
+				{"label": "Confess" if lab_looted else "…", "id": "confess" if lab_looted else "noop"},
+				{"label": "Deny"    if lab_looted else "…", "id": "deny"    if lab_looted else "noop"},
+				{"label": "Ask a question",                 "id": "chat"}
+			],
+			self,
+			"_on_dialogue_choice_guard"
+		)
 
 
 

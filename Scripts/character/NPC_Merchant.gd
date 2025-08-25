@@ -126,8 +126,9 @@ func _ready() -> void:
 	_pick_next_action()
 
 func _physics_process(_dt: float) -> void:
-	# Hard-freeze while Chat UI is open
-	if typeof(Chat) != TYPE_NIL and Chat.is_open():
+	# Hard-freeze while Chat UI is open OR Dialogue is active
+	if (typeof(Chat) != TYPE_NIL and Chat.is_open()) \
+	or (typeof(Dialogue) != TYPE_NIL and Dialogue.is_active()):
 		if _state != MState.TALKING:
 			_pause_for_dialogue()
 		return
@@ -254,21 +255,9 @@ func talk_to_player() -> void:
 
 	_pause_for_dialogue()
 
-	var ctx: Dictionary = {
-		"lab_looted": State.get_flag("lab_looted"),
-		"player_wanted": State.get_flag("player_wanted"),
-		# NEW: Include individual reputation for personalized dialogue
-		"player_reputation": get_player_reputation()
-	}
-
-	var line: String = await LLM.generate_line(
-		"village merchant: cheerful, eager to make a sale",
-		"invite_player_to_shop",
-		ctx,
-		"Welcome traveler! Care to browse my wares?"
-	)
-
-	Dialogue.start("Merchant", ["[b]Merchant:[/b] " + line])
+	# Show immediate greeting to avoid delays
+	var immediate_greeting = "Welcome traveler! Care to browse my wares?"
+	Dialogue.start("Merchant", ["[b]Merchant:[/b] " + immediate_greeting])
 	Dialogue.choices(
 		[
 			{"label":"Show me your goods", "id":"browse"},
@@ -280,12 +269,46 @@ func talk_to_player() -> void:
 	)
 
 	_bind_dialogue_resume_hooks() # resume when Dialogue ends (and Chat, if opened)
+	
+	# Optionally enhance the greeting with AI in the background (non-blocking)
+	_enhance_greeting_async()
+
+func _enhance_greeting_async() -> void:
+	# This runs in the background and doesn't block the UI
+	var ctx: Dictionary = {
+		"lab_looted": State.get_flag("lab_looted"),
+		"player_wanted": State.get_flag("player_wanted"),
+		"player_reputation": get_player_reputation()
+	}
+
+	var enhanced_line: String = await LLM.generate_line(
+		"village merchant: cheerful, eager to make a sale",
+		"invite_player_to_shop",
+		ctx,
+		"Welcome traveler! Care to browse my wares?"
+	)
+	
+	# If the dialogue is still open and we got a better response, update it
+	if Dialogue.is_active() and enhanced_line != "Welcome traveler! Care to browse my wares?":
+		Dialogue.start("Merchant", ["[b]Merchant:[/b] " + enhanced_line])
+		Dialogue.choices(
+			[
+				{"label":"Show me your goods", "id":"browse"},
+				{"label":"Ask a question",      "id":"chat"},
+				{"label":"Not today",           "id":"leave"}
+			],
+			self,
+			"_on_dialogue_choice_merchant"
+		)
 
 func _on_dialogue_choice_merchant(choice_id: String) -> void:
 	match choice_id:
 		"browse":
 			# NEW: Update THIS merchant's individual opinion of the player
 			update_player_reputation(10)  # Merchant likes customers who browse
+			# Also update global reputation
+			State.change_reputation(5)  # Village likes customers who browse
+			print("[Merchant] Reputation: +10 individual, +5 global (Total: ", State.get_reputation(), ")")
 			var ctx: Dictionary = {
 				"lab_looted": State.get_flag("lab_looted"),
 				"player_wanted": State.get_flag("player_wanted"),
@@ -309,6 +332,9 @@ func _on_dialogue_choice_merchant(choice_id: String) -> void:
 				
 			# NEW: Update THIS merchant's individual opinion of the player
 			update_player_reputation(5)  # Merchant likes customers who chat
+			# Also update global reputation
+			State.change_reputation(2)  # Village likes customers who chat
+			print("[Merchant] Reputation: +5 individual, +2 global (Total: ", State.get_reputation(), ")")
 			Dialogue.close()
 			var persona: String = "village merchant: cheerful, chatty, a little pushy about sales"
 			var ctx_provider := func() -> Dictionary:
@@ -322,21 +348,21 @@ func _on_dialogue_choice_merchant(choice_id: String) -> void:
 			_bind_chat_resume_hooks()
 
 		"leave":
-			# NEW: Update THIS merchant's individual opinion of the player
+			# NEW: Update THIS merchant's individual opinion of the player immediately
 			update_player_reputation(-15)  # Merchant dislikes customers who leave without buying
-			var ctx2: Dictionary = {
-				"lab_looted": State.get_flag("lab_looted"),
-				"player_wanted": State.get_flag("player_wanted"),
-				"player_reputation": get_player_reputation()
-			}
-			var mad_line: String = await LLM.generate_line(
-				"village merchant: easily offended, grumpy when rejected",
-				"scold_customer_for_leaving_without_purchase",
-				ctx2,
-				"Hmph! Fine—don't waste my time then."
-			)
-			Dialogue.start("Merchant", ["[b]Merchant:[/b] " + mad_line])
-			_bind_dialogue_resume_hooks()
+			# Also update global reputation
+			State.change_reputation(-10)  # Village dislikes customers who waste merchant time
+			print("[Merchant] Reputation: -15 individual, -10 global (Total: ", State.get_reputation(), ")")
+			
+			# Debug: Show current reputation values
+			State.debug_reputations()
+			
+			# Show immediate grumpy response to avoid delays
+			var immediate_response = "Hmph! Fine—don't waste my time then."
+			Dialogue.start("Merchant", ["[b]Merchant:[/b] " + immediate_response])
+			
+			# Don't bind resume hooks for leave - just end the interaction
+			# The dialogue will close when player clicks through it
 
 # === pause/resume helpers ===
 func _pause_for_dialogue() -> void:
