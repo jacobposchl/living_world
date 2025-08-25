@@ -35,6 +35,8 @@ collision_layer = 0
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SightArea"]
 shape = SubResource("CircleShape2D_ol6gw")
 
+[node name="Agent" type="NavigationAgent2D" parent="."]
+
 [node name="CombatResultLabel" type="Label" parent="."]
 visible = false
 anchors_preset = 5

@@ -5,94 +5,142 @@
 [node name="ChatUI" type="CanvasLayer"]
 script = ExtResource("1_sq36d")
 
-[node name="Box" type="Panel" parent="."]
-anchors_preset = -1
-anchor_right = 0.359
-anchor_bottom = 0.4
-offset_right = -0.52002
-offset_bottom = 0.039978
+[node name="ChatBox" type="Panel" parent="."]
+modulate = Color(1, 1, 1, 0.95)
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 50.0
+offset_top = -250.0
+offset_right = 550.0
+offset_bottom = 250.0
+grow_vertical = 2
 
-[node name="Header" type="HBoxContainer" parent="Box"]
+[node name="MainContainer" type="VBoxContainer" parent="ChatBox"]
 layout_mode = 1
-anchors_preset = -1
-anchor_right = 0.662
-anchor_bottom = 0.13
-offset_right = 0.141968
-offset_bottom = -0.110001
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="HeaderLabel" type="Label" parent="Box/Header"]
+[node name="Header" type="PanelContainer" parent="ChatBox/MainContainer"]
+modulate = Color(0.9, 0.9, 1, 1)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-text = "Chat UI"
 
-[node name="ReputationScore" type="Label" parent="Box/Header"]
+[node name="HeaderRow" type="HBoxContainer" parent="ChatBox/MainContainer/Header"]
+layout_mode = 2
+
+[node name="LeftSection" type="HBoxContainer" parent="ChatBox/MainContainer/Header/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Icon" type="Label" parent="ChatBox/MainContainer/Header/HeaderRow/LeftSection"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+text = "💬"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Title" type="Label" parent="ChatBox/MainContainer/Header/HeaderRow/LeftSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Conversation"
+vertical_alignment = 1
+
+[node name="RightSection" type="HBoxContainer" parent="ChatBox/MainContainer/Header/HeaderRow"]
+layout_mode = 2
+
+[node name="Reputation" type="Label" parent="ChatBox/MainContainer/Header/HeaderRow/RightSection"]
 layout_mode = 2
 text = "Rep: 0"
 horizontal_alignment = 2
+vertical_alignment = 1
 
-[node name="Transcript" type="RichTextLabel" parent="Box"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.078
-anchor_top = 0.17
-anchor_right = 0.913
-anchor_bottom = 0.75
-offset_left = 0.197998
-offset_top = 0.00999832
-offset_right = -0.0670166
-offset_bottom = 0.00198364
-text = "This is the chat"
+[node name="Divider" type="VSeparator" parent="ChatBox/MainContainer/Header/HeaderRow/RightSection"]
+layout_mode = 2
 
-[node name="TypingIndicator" type="HBoxContainer" parent="Box"]
+[node name="BackButton" type="Button" parent="ChatBox/MainContainer/Header/HeaderRow/RightSection"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Back to Dialogue (Esc)"
+text = "←"
+
+[node name="ChatArea" type="VBoxContainer" parent="ChatBox/MainContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Messages" type="PanelContainer" parent="ChatBox/MainContainer/ChatArea"]
+modulate = Color(0.98, 0.98, 0.98, 1)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MessageMargin" type="MarginContainer" parent="ChatBox/MainContainer/ChatArea/Messages"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="MessageText" type="RichTextLabel" parent="ChatBox/MainContainer/ChatArea/Messages/MessageMargin"]
+layout_mode = 2
+bbcode_enabled = true
+text = "Welcome to the conversation!"
+fit_content = true
+scroll_following = true
+
+[node name="TypingArea" type="PanelContainer" parent="ChatBox/MainContainer/ChatArea"]
 visible = false
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.078
-anchor_top = 0.75
-anchor_right = 0.913
-anchor_bottom = 0.8
-offset_left = 0.197998
-offset_top = 0.00198364
-offset_right = -0.0670166
-offset_bottom = -0.0340118
+layout_mode = 2
 
-[node name="TypingLabel" type="Label" parent="Box/TypingIndicator"]
+[node name="TypingMargin" type="MarginContainer" parent="ChatBox/MainContainer/ChatArea/TypingArea"]
+layout_mode = 2
+
+[node name="TypingRow" type="HBoxContainer" parent="ChatBox/MainContainer/ChatArea/TypingArea/TypingMargin"]
+layout_mode = 2
+
+[node name="TypingIcon" type="Label" parent="ChatBox/MainContainer/ChatArea/TypingArea/TypingMargin/TypingRow"]
+modulate = Color(0.7, 0.7, 0.7, 1)
+layout_mode = 2
+text = "⌨"
+
+[node name="TypingText" type="Label" parent="ChatBox/MainContainer/ChatArea/TypingArea/TypingMargin/TypingRow"]
 modulate = Color(0.7, 0.7, 0.7, 1)
 layout_mode = 2
 text = "NPC is typing"
 
-[node name="TypingDots" type="Label" parent="Box/TypingIndicator"]
+[node name="TypingDots" type="Label" parent="ChatBox/MainContainer/ChatArea/TypingArea/TypingMargin/TypingRow"]
 modulate = Color(0.7, 0.7, 0.7, 1)
 layout_mode = 2
 text = "..."
 
-[node name="InputRow" type="VBoxContainer" parent="Box"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.048
-anchor_top = 0.85
-anchor_right = 0.956
-anchor_bottom = 0.95
-offset_left = -0.0319996
-offset_top = -8.948
-offset_right = 0.195984
-offset_bottom = 29.88
-alignment = 1
-
-[node name="Entry" type="LineEdit" parent="Box/InputRow"]
-custom_minimum_size = Vector2(0, 30)
+[node name="InputArea" type="PanelContainer" parent="ChatBox/MainContainer"]
+modulate = Color(0.95, 0.95, 1, 1)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
+
+[node name="InputMargin" type="MarginContainer" parent="ChatBox/MainContainer/InputArea"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="InputRow" type="HBoxContainer" parent="ChatBox/MainContainer/InputArea/InputMargin"]
+layout_mode = 2
+
+[node name="TextInput" type="LineEdit" parent="ChatBox/MainContainer/InputArea/InputMargin/InputRow"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
 placeholder_text = "Type your message..."
 
-[node name="Send" type="Button" parent="Box/InputRow"]
-custom_minimum_size = Vector2(60, 30)
+[node name="SendButton" type="Button" parent="ChatBox/MainContainer/InputArea/InputMargin/InputRow"]
+custom_minimum_size = Vector2(80, 40)
 layout_mode = 2
 text = "Send"
-
-[node name="CloseBtn" type="Button" parent="Box"]
-layout_mode = 0
-offset_left = 420.0
-offset_top = 4.0
-offset_right = 451.0
-offset_bottom = 35.0
-tooltip_text = "Back to Dialogue (Esc)"
-text = "←"
